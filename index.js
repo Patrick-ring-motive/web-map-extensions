@@ -454,11 +454,17 @@
             },_delete);
         })();
         (()=>{
+       const normalizeHeaderKey = key =>{
+                const headers = new Headers();
+                headers.set(String(key),'normalize');
+                return headers.keys().next().value;
+            };
             const appendix = new GeekMap();
             if(Headers.prototype.getAll)return;
             const _append = Headers.prototype.append;
             const _set = Headers.prototype.set;
             Headers.prototype.append = function append(key,value){
+                key = normalizeHeaderKey(key);
                 if(!appendix.has(this)){
                     appendix.set(this,new GeekMap());
                 }
@@ -485,10 +491,11 @@
             };
             const _delete = Headers.prototype.delete;
             Headers.prototype.delete = Object.setPrototypeOf(function delete(key){
+                key = normalizeHeaderKey(key);
                 appendix.delete(key);
                 return _delete.call(this,key);
             },_delete);
-        })(); 
+        })();
     } catch (e) {
         console.warn(e);
     }
