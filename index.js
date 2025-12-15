@@ -366,7 +366,29 @@
             $FormData.prototype.constructor = _FormData;
             globalThis.FormData = _FormData;
         })();
-
+        (()=>{
+            const appendix = new Map();
+            Map.prototype.append ??= function append(key,value){
+                if(!this.has(key){
+                   return this.set(key,value);
+                }
+                if(!appendix.has(this)){
+                    appendix.set(this,new Map());
+                }
+                const apMap = appendix.get(this);
+                if(!apMap.has(key)){
+                    apMap.set(key,[]);
+                }
+                const values = apMap.get(key);
+                values.push(value);
+                return apMap.push(key,values);
+            };
+            Map.prototype.getAll = function getAll(key){
+                if(!this.has(key))return;
+                const value = this.get(key);
+                return [value,...appendix.get(this)?.get?.(key)??[]]
+            };
+        })();
     } catch (e) {
         console.warn(e);
     }
