@@ -366,8 +366,39 @@
             $FormData.prototype.constructor = _FormData;
             globalThis.FormData = _FormData;
         })();
+        const canWeak = (key)=>{
+                try{
+                    const w = new WeakMap();
+                    new w.set(key,true);
+                    return w.get(key);
+                }catch{
+                    return false;
+                }
+            };
+        class GeekMap{
+            constructor(){
+                this['&map'] = new Map();
+                if(typeof WeakMap !== 'undefined'){
+                    this['&weakMap'] = new WeakMap();
+                }else{
+                    this['&weakMap'] = new Map();
+                }
+            }
+            set(key,value){
+                if(canWeak(key)){
+                    return this['&weakMap'].set(key,value);
+                }
+                return this['&map'].set(key,value);
+            }
+            get(key){
+                if(canWeak(key)){
+                    return this['&weakMap'].get(key);
+                }
+                return this['&map'].get(key);
+            }
+        }
         (()=>{
-            const appendix = new Map();
+            const appendix = new GeekMap();
             Map.prototype.append ??= function append(key,value){
                 if(!this.has(key)){
                    return this.set(key,value);
