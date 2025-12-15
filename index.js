@@ -431,7 +431,7 @@
                    return this.set(key,value);
                 }
                 if(!appendix.has(this)){
-                    appendix.set(this,new Map());
+                    appendix.set(this,new GeekMap());
                 }
                 const apMap = appendix.get(this);
                 if(!apMap.has(key)){
