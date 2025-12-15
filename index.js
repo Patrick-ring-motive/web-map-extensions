@@ -396,6 +396,12 @@
                 }
                 return this['&map'].get(key);
             }
+            has(key){
+                if(canWeak(key)){
+                    return this['&weakMap'].has(key);
+                }
+                return this['&map'].has(key);
+            }
         }
         (()=>{
             const appendix = new GeekMap();
