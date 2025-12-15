@@ -32,16 +32,9 @@
         const eq = (x, y) => {
             return x === y || (x !== x && y !== y);
         };
-        const TypedArray = Uint8Array?.__proto__;
         const isFunction = (x) => typeof x === "function" || instanceOf(x, Function) || x?.constructor?.name == 'Function';
         const isString = (x) => typeof x === "string" || instanceOf(x, String) || x?.constructor?.name == 'String';
-        const isArray = (x) =>
-            Array.isArray(x) || instanceOf(x, Array) || x?.constructor?.name == 'Array';
         const applyMethod = ($this, fn, args) => $this[fn].apply($this, args);
-        const enact = (fn, args) => fn.apply(undefined, args);
-        const arr = (x) => Array.from(x);
-        const anew = (fn, args) => Reflect.construct(fn, args);
-
 
         for (const $Map of [Q(() => Headers) ?? {}, Q(() => FormData) ?? {}, Q(() => URLSearchParams) ?? {}]) {
             (() => {
