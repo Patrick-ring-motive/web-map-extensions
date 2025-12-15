@@ -45,7 +45,7 @@
 
         for (const $Map of [Q(() => Headers) ?? {}, Q(() => FormData) ?? {}, Q(() => URLSearchParams) ?? {}]) {
             (() => {
-                if (!$Map) continue;
+                if (!$Map) return;
 
                 (() => {
                     objFillProp($Map.prototype, "clear", function clear() {
