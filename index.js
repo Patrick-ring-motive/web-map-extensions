@@ -369,7 +369,7 @@
         (()=>{
             const appendix = new Map();
             Map.prototype.append ??= function append(key,value){
-                if(!this.has(key){
+                if(!this.has(key)){
                    return this.set(key,value);
                 }
                 if(!appendix.has(this)){
