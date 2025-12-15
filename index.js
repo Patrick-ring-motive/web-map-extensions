@@ -388,7 +388,7 @@
                 const value = this.get(key);
                 return [value,...appendix.get(this)?.get?.(key)??[]]
             };
-        })();
+        })(); 
     } catch (e) {
         console.warn(e);
     }
