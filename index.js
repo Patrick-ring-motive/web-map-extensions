@@ -369,7 +369,7 @@
         const canWeak = (key)=>{
                 try{
                     const w = new WeakMap();
-                    new w.set(key,true);
+                    w.set(key,true);
                     return w.get(key);
                 }catch{
                     return false;
@@ -402,6 +402,12 @@
                 }
                 return this['&map'].has(key);
             }
+            delete(key){
+                if(canWeak(key)){
+                    return this['&weakMap'].delete(key);
+                }
+                return this['&map'].delete(key);
+            }
         }
         (()=>{
             const appendix = new GeekMap();
@@ -425,6 +431,11 @@
                 const value = this.get(key);
                 return [value,...appendix.get(this)?.get?.(key)??[]];
             };
+            const _delete = Map.prototype.delete;
+            Map.prototype.delete = Object.setPrototypeOf(function delete(key){
+                appendix.delete(key);
+                return _delete.call(this,key);
+            },_delete);
         })(); 
     } catch (e) {
         console.warn(e);
