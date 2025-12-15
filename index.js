@@ -418,12 +418,12 @@
                 }
                 const values = apMap.get(key);
                 values.push(value);
-                return apMap.push(key,values);
+                return apMap.set(key,values);
             };
             Map.prototype.getAll = function getAll(key){
                 if(!this.has(key))return;
                 const value = this.get(key);
-                return [value,...appendix.get(this)?.get?.(key)??[]]
+                return [value,...appendix.get(this)?.get?.(key)??[]];
             };
         })(); 
     } catch (e) {
