@@ -189,7 +189,10 @@
                         Object.defineProperty($Map.prototype, "size", {
                             get() {
                                 const $size = size.bind(this);
-                                for(const prop of ['valueOf',
+                                for(const prop of ['valueOf', 'toString', 'toLocaleString', Symbol.toPrimitive]{
+                                    $size[prop] = $size;
+                                }
+                                return $size;
                             },
                             set() {},
                             enumerable: false,
