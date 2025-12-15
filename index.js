@@ -441,6 +441,7 @@
                 values.push(value);
                 return apMap.set(key,values);
             };
+            if(Map.prototype.getAll)return;
             Map.prototype.getAll = function getAll(key){
                 if(!this.has(key))return;
                 const value = this.get(key);
@@ -448,6 +449,42 @@
             };
             const _delete = Map.prototype.delete;
             Map.prototype.delete = Object.setPrototypeOf(function delete(key){
+                appendix.delete(key);
+                return _delete.call(this,key);
+            },_delete);
+        })();
+        (()=>{
+            const appendix = new GeekMap();
+            if(Headers.prototype.getAll)return;
+            const _append = Headers.prototype.append;
+            const _set = Headers.prototype.set;
+            Headers.prototype.append = function append(key,value){
+                if(!appendix.has(this)){
+                    appendix.set(this,new GeekMap());
+                }
+                const apMap = appendix.get(this);
+                if(!apMap.has(key)){
+                    const arr = [];
+                    if(this.has(key)){
+                        arr.push(this.get(key));
+                    };
+                    apMap.set(key,arr);
+                }
+                const values = apMap.get(key);
+                values.push(value);
+                apMap.set(key,values);
+                return _append.call(this,key,value);
+            };
+            Headers.prototype.set = function set(key,value){
+                this.delete(key);
+                this.append(key,value);
+            };
+            Headers.prototype.getAll = function getAll(key){
+                if(!this.has(key))return[];
+                return [...appendix.get(this)?.get?.(key)??[]];
+            };
+            const _delete = Headers.prototype.delete;
+            Headers.prototype.delete = Object.setPrototypeOf(function delete(key){
                 appendix.delete(key);
                 return _delete.call(this,key);
             },_delete);
