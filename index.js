@@ -167,7 +167,8 @@
                 })();
 
                 (() => {
-                    objFillProp($Map.prototype, "getAll", function getAll(key) {
+                    if($Map.prototype.getAll)return;
+                    objDefProp($Map.prototype, "getAll", function getAll(key) {
                         if (!this.has(key)) return [];
                         if (/set-cookie/i.test(key)) return this.getSetCookie?.() ?? String(this.get(key)).split(", ");
                         return String(this.get(key)).split(", ");
@@ -183,6 +184,17 @@
                             set() {},
                             enumerable: false,
                         });
+                    if(typeof $Map.prototype.size === 'function'){
+                        const _size = $Map.prototype.size;
+                        Object.defineProperty($Map.prototype, "size", {
+                            get() {
+                                const $size = size.bind(this);
+                                for(const prop of ['valueOf',
+                            },
+                            set() {},
+                            enumerable: false,
+                        });
+                    }
                 })();
 
                 (() => {
