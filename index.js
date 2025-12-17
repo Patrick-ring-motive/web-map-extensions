@@ -516,6 +516,16 @@
                                 if(typeof propValue === 'function'){
                                     return function(){
                                         const result = $map[propKey](...arguments);
+                                        if(result === $map){
+                                            $this.clear();
+                                            for (const [key, value] of result) {
+                                                $this.append(key,value);
+                                            }
+                                        }
+                                        if(result instanceof Map){
+                                            return new MapLikeClass(result);
+                                        }
+                                        return result;
                                     };
                                 }
                                 return propValue;
@@ -524,6 +534,9 @@
                     }
                 });
             };
+            for(const $MapLike of [Headers,FormData,URLSearchParams){
+                proxyMapPrototype($MapLike);
+            }
         })();
     } catch (e) {
         console.warn(e);
