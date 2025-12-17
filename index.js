@@ -497,7 +497,7 @@
                 proxyPrototype(MapLikeClass.prototype,{
                     get(target, propKey, receiver){
                         const $this = receiver ?? target;
-                        let propValue = Reflect.get(target, propertyKey, receiver);
+                        let propValue = Reflect.get(target, propKey, receiver);
                         if(propValue != undefined){
                             return propValue;
                         }
