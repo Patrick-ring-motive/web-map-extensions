@@ -509,6 +509,18 @@
                             }
                             return propValue;
                         }
+                        if(Reflect.has(Map.prototype,propKey,Map.prototype)){
+                            const $map = Q(()=>new Map($this));
+                            propValue = $map[propKey];
+                            if(propValue != undefined){
+                                if(typeof propValue === 'function'){
+                                    return function(){
+                                        const result = $map[propKey](...arguments);
+                                    };
+                                }
+                                return propValue;
+                            }
+                        }
                     }
                 });
             };
