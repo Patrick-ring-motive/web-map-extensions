@@ -528,7 +528,7 @@
                                         return result;
                                     };
                                 }
-                                return propValue;
+                                return Q(()=>$this.get(propKey)) ?? propValue;
                             }
                         }
                     }
