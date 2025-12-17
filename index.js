@@ -488,8 +488,29 @@
             },_delete);
         })();
         (()=>{
+            const proxyPrototype = (proto, handler = {}) => {
+                const target = Object.getPrototypeOf(proto) ?? {};
+                Object.setPrototypeOf(proto, new Proxy(target, handler));
+                return proto;
+            };
             const proxyMapPrototype = MapLikeClass =>{
-                const $prototype = MapLikeClass.prototype;
+                proxyPrototype(MapLikeClass.prototype,{
+                    get(target, propKey, receiver){
+                        const $this = receiver ?? target;
+                        let propValue = Reflect.get(target, propertyKey, receiver);
+                        if(propValue != undefined){
+                            return propValue;
+                        }
+                        const iter = Q(()=>$this[Symbol.iterator]());
+                        propValue = iter[propKey];
+                        if(propValue != undefined){
+                            if(typeof propValue === 'function'){
+                                return propValue.bind(iter);
+                            }
+                            return propValue;
+                        }
+                    }
+                });
             };
         })();
     } catch (e) {
