@@ -487,6 +487,11 @@
                 return _delete.call(this,key);
             },_delete);
         })();
+        (()=>{
+            const proxyMapPrototype = MapLikeClass =>{
+                const $prototype = MapLikeClass.prototype;
+            };
+        })();
     } catch (e) {
         console.warn(e);
     }
