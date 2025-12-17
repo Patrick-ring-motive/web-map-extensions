@@ -528,8 +528,9 @@
                                         return result;
                                     };
                                 }
-                                return Q(()=>$this.get(propKey)) ?? propValue;
+                                return propValue;
                             }
+                            return Q(()=>$this.get(propKey)) ?? propValue;
                         }
                     }
                 });
