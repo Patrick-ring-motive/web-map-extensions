@@ -1,545 +1,546 @@
 (() => {
     const Q = fn => {
-        try {
-            return fn?.();
-        } catch {}
+      try {
+        return fn?.();
+      } catch {}
     };
     try {
-        const objDoProp = function(obj, prop, def, enm, mut) {
-            return Object.defineProperty(obj, prop, {
-                value: def,
-                writable: mut,
-                enumerable: enm,
-                configurable: mut,
-            });
-        };
-        const objDefProp = (obj, prop, def) => objDoProp(obj, prop, def, false, true);
-        const isNullish = (x) => x === null || x === undefined;
-        const isObject = x => ['function', 'object'].includes(typeof x) && x != null;
-        const objFillProp = (obj, prop, value) => {
-            if (isNullish(obj[prop])) {
-                return objDefProp(obj, prop, value);
-            }
-            return obj[prop];
-        };
-        const instanceOf = function instanceOf(x, y) {
-            try {
-                return x instanceof y;
-            } catch {
-                return false;
-            }
-        };
-        const eq = (x, y) => {
-            return x === y || (x !== x && y !== y);
-        };
-        const isFunction = (x) => typeof x === "function" || instanceOf(x, Function) || x?.constructor?.name == 'Function';
-        const isString = (x) => typeof x === "string" || instanceOf(x, String) || x?.constructor?.name == 'String';
-        const applyMethod = ($this, fn, args) => $this[fn].apply($this, args);
-
-        for (const $Map of [Q(() => Headers) ?? {}, Q(() => FormData) ?? {}, Q(() => URLSearchParams) ?? {}]) {
-            (() => {
-                if (!$Map) return;
-
-                (() => {
-                    objFillProp($Map.prototype, "clear", function clear() {
-                        for (const [key, _] of this) {
-                            this.delete(key);
-                        }
-                    });
-                })();
-
-                (() => {
-                    const _delete = $Map.prototype.delete;
-                    objDefProp($Map.prototype, "delete", function $delete(key) {
-                        const has = this.has(key);
-                        _delete.call(this, key);
-                        return has;
-                    });
-                    objDefProp($Map.prototype.delete, "name", "delete");
-                })();
-
-                (() => {
-                    // `Map.prototype.emplace` method
-                    // https://github.com/tc39/proposal-upsert
-                    objFillProp($Map.prototype, "emplace", function emplace(key, handler) {
-                        if (this.has(key)) {
-                            const current = this.get(key);
-                            if (handler.update) {
-                                const value = handler.update(current, key, this);
-                                this.set(key, value);
-                                return value;
-                            }
-                            return current;
-                        }
-                        if (handler.insert) {
-                            const inserted = handler.insert(key, this);
-                            this.set(key, inserted);
-                            return inserted;
-                        }
-                    });
-                })();
-
-                (() => {
-                    // `Map.prototype.filter` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp(
-                        $Map.prototype,
-                        "filter",
-                        function filter(callbackfn, thisArg) {
-                            const fn = callbackfn.bind(thisArg);
-                            const $map = new $Map();
-                            for (const [key, value] of this) {
-                                if (fn(value, key, this)) $map.append(key, value);
-                            }
-                            return $map;
-                        },
-                    );
-                })();
-
-                (() => {
-                    // `Map.prototype.some` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp(
-                        $Map.prototype,
-                        "some",
-                        function some(callbackfn, thisArg) {
-                            const fn = callbackfn.bind(thisArg);
-                            for (const [key, value] of this) {
-                                if (fn(value, key, this)) return true;
-                            }
-                            return false;
-                        },
-                    );
-                })();
-
-                (() => {
-                    // `Map.prototype.every` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp(
-                        $Map.prototype,
-                        "every",
-                        function every(callbackfn, thisArg) {
-                            const fn = callbackfn.bind(thisArg);
-                            for (const [key, value] of this) {
-                                if (!fn(value, key, this)) return false;
-                            }
-                            return true;
-                        },
-                    );
-                })();
-
-                (() => {
-                    // `Map.prototype.includes` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp($Map.prototype, "includes", function includes() {
-                        return applyMethod(Array.from(this.values()), "includes", arguments);
-                    });
-                })();
-
-                (() => {
-                    // `Map.prototype.find` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp(
-                        $Map.prototype,
-                        "find",
-                        function find(callbackfn, thisArg) {
-                            const boundFunction = callbackfn.bind(thisArg);
-                            for (const [key, value] of this) {
-                                if (boundFunction(value, key, this)) return value;
-                            }
-                        },
-                    );
-                })();
-
-                (() => {
-                    // `Map.prototype.findKey` method
-                    // https://github.com/tc39/proposal-collection-methods
-                    objFillProp(
-                        $Map.prototype,
-                        "findKey",
-                        function findKey(callbackfn, thisArg) {
-                            const boundFunction = callbackfn.bind(thisArg);
-                            for (const [key, value] of this) {
-                                if (boundFunction(value, key, this)) return key;
-                            }
-                        },
-                    );
-                })();
-
-                (() => {
-                    new $Map().size ??
-                        Object.defineProperty($Map.prototype, "size", {
-                            get() {
-                                return Array.from(this.entries()).length;
-                            },
-                            set() {},
-                            enumerable: false,
-                        });
-                    if(typeof $Map.prototype.size === 'function'){
-                        const _size = $Map.prototype.size;
-                        Object.defineProperty($Map.prototype, "size", {
-                            get() {
-                                const $size = size.bind(this);
-                                for(const prop of ['valueOf', 'toString', 'toLocaleString', Symbol.toPrimitive]){
-                                    $size[prop] = $size;
-                                }
-                                return $size;
-                            },
-                            set() {},
-                            enumerable: false,
-                        });
-                    }
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "mapValues",
-                        function mapValues(callbackFn, thisArg = this) {
-                            const retObj = new $Map();
-                            for (const [key, value] of this) {
-                                const newValue = Reflect.apply(callbackFn, thisArg, [
-                                    value,
-                                    key,
-                                    this,
-                                ]);
-                                retObj.append(key, newValue);
-                            }
-                            return retObj;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "mapKeys",
-                        function mapKeys(callbackFn, thisArg = this) {
-                            const retObj = new $Map();
-                            for (const [key, value] of this) {
-                                const newKey = Reflect.apply(callbackFn, thisArg, [
-                                    value,
-                                    key,
-                                    this,
-                                ]);
-                                retObj.append(newKey, value);
-                            }
-                            return retObj;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp($Map.prototype, "merge", function merge(...args) {
-                        const $map = new $Map(this);
-                        for (const item of args) {
-                            const itemMap = new $Map(item);
-                            for (const [key, value] of itemMap) {
-                                $map.append(key, value);
-                            }
-                        }
-                        return $map;
-                    });
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "upsert",
-                        function upsert(key, updateFn, insertFn) {
-                            let value;
-                            if (this.has(key)) {
-                                value = this.get(key);
-                                if (isFunction(updateFn)) {
-                                    value = updateFn(value);
-                                    this.set(key, value);
-                                }
-                            } else if (isFunction(insertFn)) {
-                                value = insertFn();
-                                this.set(key, value);
-                            }
-                            return value;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp($Map.prototype, "deleteAll", function deleteAll(keys) {
-                        let all = true;
-                        for (const key of keys) {
-                            all = all && this.delete(key);
-                        }
-                        return all;
-                    });
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "update",
-                        function update(key, callback, thunk) {
-                            this.set(key, callback(this.get(key) ?? thunk(key, this), key, this));
-                            return this;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "updateOrInsert",
-                        function updateOrInsert() {
-                            return applyMethod(this, "upsert", arguments);
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp($Map.prototype, "keyOf", function keyOf(searchElement) {
-                        for (const [key, value] of this) {
-                            if (value === searchElement) {
-                                return key;
-                            }
-                        }
-                    });
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "getOrInsert",
-                        function getOrInsert(key, value) {
-                            if (this.has(key)) {
-                                return this.get(key);
-                            }
-                            this.set(key, value);
-                            return value;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "getOrInsertComputed",
-                        function getOrInsertComputed(key, fn) {
-                            if (this.has(key)) {
-                                return this.get(key);
-                            }
-                            const value = fn(key);
-                            this.set(key, value);
-                            return value;
-                        },
-                    );
-                })();
-
-                (() => {
-                    objFillProp(
-                        $Map.prototype,
-                        "reduce",
-                        function reduce(callbackfn, accumulator) {
-                            for (const [key, value] of this) {
-                                accumulator = callbackfn(accumulator, value, key, this);
-                            }
-                            return accumulator;
-                        },
-                    );
-                })();
-            })();
+      const objDoProp = function(obj, prop, def, enm, mut) {
+        return Object.defineProperty(obj, prop, {
+          value: def,
+          writable: mut,
+          enumerable: enm,
+          configurable: mut,
+        });
+      };
+      const objDefProp = (obj, prop, def) => objDoProp(obj, prop, def, false, true);
+      const isNullish = (x) => x === null || x === undefined;
+      const isObject = x => ['function', 'object'].includes(typeof x) && x != null;
+      const objFillProp = (obj, prop, value) => {
+        if (isNullish(obj[prop])) {
+          return objDefProp(obj, prop, value);
         }
+        return obj[prop];
+      };
+      const instanceOf = function instanceOf(x, y) {
+        try {
+          return x instanceof y;
+        } catch {
+          return false;
+        }
+      };
+      const eq = (x, y) => {
+        return x === y || (x !== x && y !== y);
+      };
+      const isFunction = (x) => typeof x === "function" || instanceOf(x, Function) || x?.constructor?.name == 'Function';
+      const isString = (x) => typeof x === "string" || instanceOf(x, String) || x?.constructor?.name == 'String';
+      const applyMethod = ($this, fn, args) => $this[fn].apply($this, args);
+
+      for (const $Map of [Q(() => Headers) ?? {}, Q(() => FormData) ?? {}, Q(() => URLSearchParams) ?? {}]) {
         (() => {
-            const $FormData = FormData;
-            const _FormData = class FormData extends $FormData {
-                constructor(...args) {
-                    if (instanceOf(args[0], Q(() => HTMLFormElement))) {
-                        return super(...args);
-                    }
-                    let kv = [];
-                    super();
-                    if (isString(args[0])) {
-                        kv = new URLSearchParams(...args);
-                    }
-                    if (args[0]?.[Symbol.iterator]) {
-                        kv = args[0];
-                    } else if (isObject(args[0])) {
-                        kv = Object.entries(args[0]);
-                    }
-                    for (const [key, value] of kv) {
-                        this.append(key, value);
-                    }
-                }
-            };
-            $FormData.prototype.constructor = _FormData;
-            globalThis.FormData = _FormData;
-        })();
-        const canWeak = (key)=>{
-                try{
-                    const w = new WeakMap();
-                    w.set(key,true);
-                    return w.get(key);
-                }catch{
-                    return false;
-                }
-            };
-        class GeekMap{
-            constructor(){
-                this['&map'] = new Map();
-                if(typeof WeakMap !== 'undefined'){
-                    this['&weakMap'] = new WeakMap();
-                }else{
-                    this['&weakMap'] = new Map();
-                }
-            }
-            set(key,value){
-                if(canWeak(key)){
-                    return this['&weakMap'].set(key,value);
-                }
-                return this['&map'].set(key,value);
-            }
-            get(key){
-                if(canWeak(key)){
-                    return this['&weakMap'].get(key);
-                }
-                return this['&map'].get(key);
-            }
-            has(key){
-                if(canWeak(key)){
-                    return this['&weakMap'].has(key);
-                }
-                return this['&map'].has(key);
-            }
-            delete(key){
-                if(canWeak(key)){
-                    return this['&weakMap'].delete(key);
-                }
-                return this['&map'].delete(key);
-            }
-        }
-        (()=>{
-            const appendix = new GeekMap();
-            Map.prototype.append ??= function append(key,value){
-                if(!this.has(key)){
-                   return this.set(key,value);
-                }
-                if(!appendix.has(this)){
-                    appendix.set(this,new GeekMap());
-                }
-                const apMap = appendix.get(this);
-                if(!apMap.has(key)){
-                    apMap.set(key,[]);
-                }
-                const values = apMap.get(key);
-                values.push(value);
-                return apMap.set(key,values);
-            };
-            if(Map.prototype.getAll)return;
-            Map.prototype.getAll = function getAll(key){
-                if(!this.has(key))return;
-                const value = this.get(key);
-                return [value,...appendix.get(this)?.get?.(key)??[]];
-            };
-            const _delete = Map.prototype.delete;
-            Map.prototype.delete = Object.setPrototypeOf(function delete(key){
-                appendix.delete(key);
-                return _delete.call(this,key);
-            },_delete);
-        })();
-        (()=>{
-       const normalizeHeaderKey = key =>{
-                const headers = new Headers();
-                headers.set(String(key),'normalize');
-                return headers.keys().next().value;
-            };
-            const appendix = new GeekMap();
-            if(Headers.prototype.getAll)return;
-            const _append = Headers.prototype.append;
-            const _set = Headers.prototype.set;
-            Headers.prototype.append = function append(key,value){
-                key = normalizeHeaderKey(key);
-                if(!appendix.has(this)){
-                    appendix.set(this,new GeekMap());
-                }
-                const apMap = appendix.get(this);
-                if(!apMap.has(key)){
-                    const arr = [];
-                    if(this.has(key)){
-                        arr.push(this.get(key));
-                    };
-                    apMap.set(key,arr);
-                }
-                const values = apMap.get(key);
-                values.push(value);
-                apMap.set(key,values);
-                return _append.call(this,key,value);
-            };
-            Headers.prototype.set = function set(key,value){
+          if (!$Map) return;
+
+          (() => {
+            objFillProp($Map.prototype, "clear", function clear() {
+              for (const [key, _] of this) {
                 this.delete(key);
-                this.append(key,value);
-            };
-            Headers.prototype.getAll = function getAll(key){
-                if(!this.has(key))return[];
-                return [...appendix.get(this)?.get?.(key)??[]];
-            };
-            const _delete = Headers.prototype.delete;
-            Headers.prototype.delete = Object.setPrototypeOf(function delete(key){
-                key = normalizeHeaderKey(key);
-                appendix.delete(key);
-                return _delete.call(this,key);
-            },_delete);
-        })();
-        (()=>{
-            const proxyPrototype = (proto, handler = {}) => {
-                const target = Object.getPrototypeOf(proto) ?? {};
-                Object.setPrototypeOf(proto, new Proxy(target, handler));
-                return proto;
-            };
-            const proxyMapPrototype = MapLikeClass =>{
-                proxyPrototype(MapLikeClass.prototype,{
-                    get(target, propKey, receiver){
-                        const $this = receiver ?? target;
-                        let propValue = Reflect.get(target, propKey, receiver);
-                        if(propValue != undefined){
-                            return propValue;
-                        }
-                        const iter = Q(()=>$this[Symbol.iterator]());
-                        propValue = iter[propKey];
-                        if(propValue != undefined){
-                            if(typeof propValue === 'function'){
-                                return propValue.bind(iter);
-                            }
-                            return propValue;
-                        }
-                        if(Reflect.has(Map.prototype,propKey,Map.prototype)){
-                            const $map = Q(()=>new Map($this));
-                            propValue = $map[propKey];
-                            if(propValue != undefined){
-                                if(typeof propValue === 'function'){
-                                    return function(){
-                                        const result = $map[propKey](...arguments);
-                                        if(result === $map){
-                                            $this.clear();
-                                            for (const [key, value] of result) {
-                                                $this.append(key,value);
-                                            }
-                                        }
-                                        if(result instanceof Map){
-                                            return new MapLikeClass(result);
-                                        }
-                                        return result;
-                                    };
-                                }
-                                return propValue;
-                            }
-                            return Q(()=>$this.get(propKey)) ?? propValue;
-                        }
-                    }
-                });
-            };
-            for(const $MapLike of [Headers,FormData,URLSearchParams){
-                proxyMapPrototype($MapLike);
+              }
+            });
+          })();
+
+          (() => {
+            const _delete = $Map.prototype.delete;
+            objDefProp($Map.prototype, "delete", function $delete(key) {
+              const has = this.has(key);
+              _delete.call(this, key);
+              return has;
+            });
+            objDefProp($Map.prototype.delete, "name", "delete");
+          })();
+
+          (() => {
+            // `Map.prototype.emplace` method
+            // https://github.com/tc39/proposal-upsert
+            objFillProp($Map.prototype, "emplace", function emplace(key, handler) {
+              if (this.has(key)) {
+                const current = this.get(key);
+                if (handler.update) {
+                  const value = handler.update(current, key, this);
+                  this.set(key, value);
+                  return value;
+                }
+                return current;
+              }
+              if (handler.insert) {
+                const inserted = handler.insert(key, this);
+                this.set(key, inserted);
+                return inserted;
+              }
+            });
+          })();
+
+          (() => {
+            // `Map.prototype.filter` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp(
+              $Map.prototype,
+              "filter",
+              function filter(callbackfn, thisArg) {
+                const fn = callbackfn.bind(thisArg);
+                const $map = new $Map();
+                for (const [key, value] of this) {
+                  if (fn(value, key, this)) $map.append(key, value);
+                }
+                return $map;
+              },
+            );
+          })();
+
+          (() => {
+            // `Map.prototype.some` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp(
+              $Map.prototype,
+              "some",
+              function some(callbackfn, thisArg) {
+                const fn = callbackfn.bind(thisArg);
+                for (const [key, value] of this) {
+                  if (fn(value, key, this)) return true;
+                }
+                return false;
+              },
+            );
+          })();
+
+          (() => {
+            // `Map.prototype.every` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp(
+              $Map.prototype,
+              "every",
+              function every(callbackfn, thisArg) {
+                const fn = callbackfn.bind(thisArg);
+                for (const [key, value] of this) {
+                  if (!fn(value, key, this)) return false;
+                }
+                return true;
+              },
+            );
+          })();
+
+          (() => {
+            // `Map.prototype.includes` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp($Map.prototype, "includes", function includes() {
+              return applyMethod(Array.from(this.values()), "includes", arguments);
+            });
+          })();
+
+          (() => {
+            // `Map.prototype.find` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp(
+              $Map.prototype,
+              "find",
+              function find(callbackfn, thisArg) {
+                const boundFunction = callbackfn.bind(thisArg);
+                for (const [key, value] of this) {
+                  if (boundFunction(value, key, this)) return value;
+                }
+              },
+            );
+          })();
+
+          (() => {
+            // `Map.prototype.findKey` method
+            // https://github.com/tc39/proposal-collection-methods
+            objFillProp(
+              $Map.prototype,
+              "findKey",
+              function findKey(callbackfn, thisArg) {
+                const boundFunction = callbackfn.bind(thisArg);
+                for (const [key, value] of this) {
+                  if (boundFunction(value, key, this)) return key;
+                }
+              },
+            );
+          })();
+
+          (() => {
+            new $Map().size ??
+              Object.defineProperty($Map.prototype, "size", {
+                get() {
+                  return Array.from(this.entries()).length;
+                },
+                set() {},
+                enumerable: false,
+              });
+            if (typeof $Map.prototype.size === 'function') {
+              const _size = $Map.prototype.size;
+              Object.defineProperty($Map.prototype, "size", {
+                get() {
+                  const $size = size.bind(this);
+                  for (const prop of ['valueOf', 'toString', 'toLocaleString', Symbol.toPrimitive]) {
+                    $size[prop] = $size;
+                  }
+                  return $size;
+                },
+                set() {},
+                enumerable: false,
+              });
             }
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "mapValues",
+              function mapValues(callbackFn, thisArg = this) {
+                const retObj = new $Map();
+                for (const [key, value] of this) {
+                  const newValue = Reflect.apply(callbackFn, thisArg, [
+                    value,
+                    key,
+                    this,
+                  ]);
+                  retObj.append(key, newValue);
+                }
+                return retObj;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "mapKeys",
+              function mapKeys(callbackFn, thisArg = this) {
+                const retObj = new $Map();
+                for (const [key, value] of this) {
+                  const newKey = Reflect.apply(callbackFn, thisArg, [
+                    value,
+                    key,
+                    this,
+                  ]);
+                  retObj.append(newKey, value);
+                }
+                return retObj;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp($Map.prototype, "merge", function merge(...args) {
+              const $map = new $Map(this);
+              for (const item of args) {
+                const itemMap = new $Map(item);
+                for (const [key, value] of itemMap) {
+                  $map.append(key, value);
+                }
+              }
+              return $map;
+            });
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "upsert",
+              function upsert(key, updateFn, insertFn) {
+                let value;
+                if (this.has(key)) {
+                  value = this.get(key);
+                  if (isFunction(updateFn)) {
+                    value = updateFn(value);
+                    this.set(key, value);
+                  }
+                } else if (isFunction(insertFn)) {
+                  value = insertFn();
+                  this.set(key, value);
+                }
+                return value;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp($Map.prototype, "deleteAll", function deleteAll(keys) {
+              let all = true;
+              for (const key of keys) {
+                all = all && this.delete(key);
+              }
+              return all;
+            });
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "update",
+              function update(key, callback, thunk) {
+                this.set(key, callback(this.get(key) ?? thunk(key, this), key, this));
+                return this;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "updateOrInsert",
+              function updateOrInsert() {
+                return applyMethod(this, "upsert", arguments);
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp($Map.prototype, "keyOf", function keyOf(searchElement) {
+              for (const [key, value] of this) {
+                if (value === searchElement) {
+                  return key;
+                }
+              }
+            });
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "getOrInsert",
+              function getOrInsert(key, value) {
+                if (this.has(key)) {
+                  return this.get(key);
+                }
+                this.set(key, value);
+                return value;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "getOrInsertComputed",
+              function getOrInsertComputed(key, fn) {
+                if (this.has(key)) {
+                  return this.get(key);
+                }
+                const value = fn(key);
+                this.set(key, value);
+                return value;
+              },
+            );
+          })();
+
+          (() => {
+            objFillProp(
+              $Map.prototype,
+              "reduce",
+              function reduce(callbackfn, accumulator) {
+                for (const [key, value] of this) {
+                  accumulator = callbackfn(accumulator, value, key, this);
+                }
+                return accumulator;
+              },
+            );
+          })();
         })();
-    } catch (e) {
+      }
+      (() => {
+        const $FormData = FormData;
+        const _FormData = class FormData extends $FormData {
+          constructor(...args) {
+            if (instanceOf(args[0], Q(() => HTMLFormElement))) {
+              return super(...args);
+            }
+            let kv = [];
+            super();
+            if (isString(args[0])) {
+              kv = new URLSearchParams(...args);
+            }
+            if (args[0]?.[Symbol.iterator]) {
+              kv = args[0];
+            } else if (isObject(args[0])) {
+              kv = Object.entries(args[0]);
+            }
+            for (const [key, value] of kv) {
+              this.append(key, value);
+            }
+          }
+        };
+        $FormData.prototype.constructor = _FormData;
+        globalThis.FormData = _FormData;
+      })();
+      const canWeak = (key) => {
+        try {
+          const w = new WeakMap();
+          w.set(key, true);
+          return w.get(key);
+        } catch {
+          return false;
+        }
+      };
+      class GeekMap {
+        constructor() {
+          this['&map'] = new Map();
+          if (typeof WeakMap !== 'undefined') {
+            this['&weakMap'] = new WeakMap();
+          } else {
+            this['&weakMap'] = new Map();
+          }
+        }
+        set(key, value) {
+          if (canWeak(key)) {
+            return this['&weakMap'].set(key, value);
+          }
+          return this['&map'].set(key, value);
+        }
+        get(key) {
+          if (canWeak(key)) {
+            return this['&weakMap'].get(key);
+          }
+          return this['&map'].get(key);
+        }
+        has(key) {
+          if (canWeak(key)) {
+            return this['&weakMap'].has(key);
+          }
+          return this['&map'].has(key);
+        }
+        delete(key) {
+          if (canWeak(key)) {
+            return this['&weakMap'].delete(key);
+          }
+          return this['&map'].delete(key);
+        }
+      }
+      (() => {
+        const appendix = new GeekMap();
+        Map.prototype.append ??= function append(key, value) {
+          if (!this.has(key)) {
+            return this.set(key, value);
+          }
+          if (!appendix.has(this)) {
+            appendix.set(this, new GeekMap());
+          }
+          const apMap = appendix.get(this);
+          if (!apMap.has(key)) {
+            apMap.set(key, []);
+          }
+          const values = apMap.get(key);
+          values.push(value);
+          return apMap.set(key, values);
+        };
+        if (Map.prototype.getAll) return;
+        Map.prototype.getAll = function getAll(key) {
+          if (!this.has(key)) return;
+          const value = this.get(key);
+          return [value, ...appendix.get(this)?.get?.(key) ?? []];
+        };
+        const _delete = Map.prototype.delete;
+        Map.prototype.delete = Object.setPrototypeOf(function delete(key) {
+          appendix.delete(key);
+          return _delete.call(this, key);
+        }, _delete);
+      })();
+      (() => {
+        const normalizeHeaderKey = key => {
+          const headers = new Headers();
+          headers.set(String(key), 'normalize');
+          return headers.keys().next().value;
+        };
+        const appendix = new GeekMap();
+        if (Headers.prototype.getAll) return;
+        const _append = Headers.prototype.append;
+        const _set = Headers.prototype.set;
+        Headers.prototype.append = function append(key, value) {
+          key = normalizeHeaderKey(key);
+          if (!appendix.has(this)) {
+            appendix.set(this, new GeekMap());
+          }
+          const apMap = appendix.get(this);
+          if (!apMap.has(key)) {
+            const arr = [];
+            if (this.has(key)) {
+              arr.push(this.get(key));
+            };
+            apMap.set(key, arr);
+          }
+          const values = apMap.get(key);
+          values.push(value);
+          apMap.set(key, values);
+          return _append.call(this, key, value);
+        };
+        Headers.prototype.set = function set(key, value) {
+          this.delete(key);
+          this.append(key, value);
+        };
+        Headers.prototype.getAll = function getAll(key) {
+          if (!this.has(key)) return [];
+          return [...appendix.get(this)?.get?.(key) ?? []];
+        };
+        const _delete = Headers.prototype.delete;
+        Headers.prototype.delete = Object.setPrototypeOf(function delete(key) {
+          key = normalizeHeaderKey(key);
+          appendix.delete(key);
+          return _delete.call(this, key);
+        }, _delete);
+      })();
+      (() => {
+          const proxyPrototype = (proto, handler = {}) => {
+            const target = Object.getPrototypeOf(proto) ?? {};
+            Object.setPrototypeOf(proto, new Proxy(target, handler));
+            return proto;
+          };
+          const proxyMapPrototype = MapLikeClass => {
+            proxyPrototype(MapLikeClass.prototype, {
+              get(target, propKey, receiver) {
+                const $this = receiver ?? target;
+                let propValue = Reflect.get(target, propKey, receiver);
+                if (propValue != undefined) {
+                  return propValue;
+                }
+                const iter = Q(() => $this[Symbol.iterator]());
+                propValue = iter[propKey];
+                if (propValue != undefined) {
+                  if (typeof propValue === 'function') {
+                    return propValue.bind(iter);
+                  }
+                  return propValue;
+                }
+                if (Reflect.has(Map.prototype, propKey, Map.prototype)) {
+                  const $map = Q(() => new Map($this));
+                  propValue = $map[propKey];
+                  if (propValue != undefined) {
+                    if (typeof propValue === 'function') {
+                      return function() {
+                        const result = $map[propKey](...arguments);
+                        if (result === $map) {
+                          $this.clear();
+                          for (const [key, value] of result) {
+                            $this.append(key, value);
+                          }
+                        }
+                        if (result instanceof Map) {
+                          return new MapLikeClass(result);
+                        }
+                        return result;
+                      };
+                    }
+                    return propValue;
+                  }
+                  return Q(() => $this.get(propKey)) ?? propValue;
+                }
+              }
+            });
+          };
+          for (const $MapLike of [Headers, FormData, URLSearchParams) {
+              proxyMapPrototype($MapLike);
+            }
+          })();
+      }
+      catch (e) {
         console.warn(e);
-    }
-})();
+      }
+    })();
